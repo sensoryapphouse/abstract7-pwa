@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Sensory Abstract 7 - relaxing digital art effects</title>
+	<link rel="manifest" href="manifest.json">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+	<link href="css/index.css" rel="stylesheet" />
+	<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+	<script type="text/javascript" src="webgl-utils.js"></script>
+	<script type="text/javascript" src="main.js"></script>
+	<script id="shader-1-fs" type="f">
+		precision highp float;
+uniform vec2 resolution;
+uniform vec2 mouse;
+uniform int index;
+uniform float time;
+uniform float Param1;
+uniform float Param2;
+uniform float Param3;
+uniform float Param4;
+
+float patternForPos(vec2 uv, float reso, float time) {
+    float timeOsc = sin(time) * 0.15;
+    float dist = 0.;
+    for(float i=10.; i < 60.; i++) {
+        float rads = timeOsc + i;
+        vec2 ctrlPoint = vec2(sin(rads), cos(rads));
+        ctrlPoint *= abs(cos(rads)) * 15.;
+        dist += sin(i + reso * distance(uv, ctrlPoint));
+    }
+    return dist;
+}
+
+vec2 rotateCoord(vec2 uv, float rads) {uv *= mat2(cos(rads), sin(rads), -sin(rads), cos(rads));return uv;}
+
+void main()
+{
+    float t = time / 8. + sin(time*1.3)/28.;
+	t /= Param1;
+    vec2 uv = (2. * gl_FragCoord.xy - resolution.xy) / resolution.y;
+    if (Param2 == 3. || Param2 == 4.) {
+   	if (uv.x > .0) {
+            uv.x = 2.*uv.x - 1.;
+        }
+        else
+        {
+            uv.x = -1. - uv.x*2. ;
+        }
+    }
+	
+    if (Param2 == 2. || Param2 == 4.) {
+            if (uv.y > .0) {
+                uv.y = 2.*uv.y - 1.;
+            }
+            else
+            {
+                uv.y = -1. - uv.y*2. ;
+            }
+
+    }
+    vec2 uv2 = rotateCoord(uv +sin(time*2.41)/40., t + 1.);
+    vec2 uv3 = rotateCoord(-uv * 2., t + 2.);
+    vec2 uv4 = rotateCoord(uv + 1.25, t + 3.);
+float col = patternForPos(uv, 4., t);
+float col2 = patternForPos(uv2, Param4 * 2.5+cos(time*.73)/37., t);
+float col3 = patternForPos(uv3, 3., t);
+float col4 = patternForPos(uv4, 1.25, t);
+    vec3 color = vec3(0);
+	if(col2 + col + col4 > 1.5) color += vec3(153., 80. *sin(uv.x+time), 165.*cos(uv.y+1.+time/2.0))/255.;
+	else if(col2 < 0.81) color = vec3(52., 86., 88.)/255.;
+	else if(abs(col4 * col3) > 4.5) color = vec3(99., 188., 88.)/255.;
+	else color = vec3(145., 198., 125.)/255.;
+			vec3 final_col = color;
+	if (Param3 == 1.)
+		final_col = color;
+	    else if (Param3 == 2.)
+		final_col = color.ggb*1.5;
+	    else if (Param3 == 3.)
+		final_col = color.grr;
+	    else if (Param3 == 4.) {
+		color.r += color.g;
+			color.b = color.g;
+			color.g = 0.;
+		final_col = color;
+		}
+	    else if (Param3 == 5.) {
+		color.g = color.r;
+			color.r = color.b;
+			color.b = 0.;
+		final_col = color;
+		}
+	    else if (Param3 == 6.) {
+		color.b += color.r;
+			color.r = color.g;
+			color.g = 0.;
+		final_col = color/1.5;
+	    }
+	    else if (Param3 == 7.)
+	       final_col = vec3((color.x + color.y + color.z)/2.);
+	gl_FragColor = vec4(final_col,1.0);
+}
+</script>
+	<script id="shader-2-fs" type="f">
+		precision highp float;
+uniform vec2 resolution;
+uniform vec2 mouse;
+uniform int index;
+uniform float time;
+uniform float Param1;
+uniform float Param2;
+uniform float Param3;
+uniform float Param4;
+
+#define PI 3.14159
+#define TWO_PI (PI*2.0)
+#define N 5.0
+
+void main(void) 
+{
+		float t = time*2./ (5.-Param1);
+	vec2 uv = gl_FragCoord.xy;
+	    if (Param2 == 3. || Param2 == 4.) {
+	if (uv.x > resolution.x / 2.) {
+            uv.x = resolution.x -uv.x;
+        }
+	    }
+    if (Param2 == 2. || Param2 == 4.) {
+            if (uv.y > resolution.y /2.) {
+                uv.y = resolution.y - uv.y;
+            }
+
+    }
+	vec2 v = (uv - resolution/10.0) / min(resolution.y,resolution.x) * (7.-Param4);
+	
+	v.x=v.x-10.0;
+	v.y=v.y-200.0;
+	float col = 0.0;
+	for(float i = 0.0; i < N; i++) 
+	{
+	  	float a = i * (TWO_PI/N) * 31.95;
+		col += cos(TWO_PI*(v.y * cos(a) + v.x * sin(a) /*+ mouse.y +i*mouse.x*/ + sin(t*0.004)*100.0 ));
+	}
+	col /= 3.0;
+	
+	vec3 color = vec3(col*0.9, -col*2.0,-col*1.0);
+	vec3 final_col = color;
+	if (Param3 == 1.)
+		final_col = color;
+	    else if (Param3 == 2.)
+		final_col = color.grb;
+	    else if (Param3 == 3.)
+		final_col = color.rbg;
+	    else if (Param3 == 4.) {
+		final_col = color.rrg;
+		}
+	else if (Param3 == 5.) {
+		final_col = color.bgr;
+		}
+	    else if (Param3 == 6.) {
+		final_col = color.brg;
+	    }
+	    else if (Param3 == 7.)
+	       final_col = vec3((color.x + color.y + color.z));
+	gl_FragColor = vec4(final_col,1.0);
+}
+</script>
+	<script id="shader-3-fs" type="f">
+		precision highp float;
+
+uniform vec2 resolution;
+uniform vec2 mouse;
+uniform int index;
+uniform float time;
+uniform float Param1;
+uniform float Param2;
+uniform float Param3;
+uniform float Param4;
+
+vec3 hsv2rgb(vec3 c){ vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0); vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);}
+void main( void )
+{
+	vec2 v_texCoord = gl_FragCoord.xy / resolution;
+	   if (Param2 == 3. || Param2 == 4.) {
+   	if (v_texCoord.x > .5) {
+            v_texCoord.x = 1.- v_texCoord.x;
+        }
+    }
+	
+    if (Param2 == 2. || Param2 == 4.) {
+            if (v_texCoord.y > .5) {
+                v_texCoord.y = 1.-v_texCoord.y;
+            }
+    }
+	vec2 p =  v_texCoord * 8.0 - vec2(18.+Param4*2.5);
+	vec2 i = p;
+	float c = 1.0;
+	float inten = .05;
+	for (int n = 0; n < 2; n++)
+	{
+		float t = time * (1.0 - (5.0 / float(n+1)))/8.;
+		t/=Param1;
+		i = p + vec2(cos(t - i.x) + sin(t + i.y),
+		sin(t - i.y) + cos(t + i.x));
+
+		c += 1.0/length(vec2(p.x / (sin(i.x)/inten),
+		p.y / (cos(i.y+t)/inten)));
+	}
+	c /= 2.;
+	c = 1.5 - sqrt(c-.5);
+	vec3 texColor = vec3(hsv2rgb(vec3(0.2, 0.3, 0.1)));
+	texColor.rgb *= (1.0 / (1.0 - (c + 0.05))/2.);
+	if (texColor.x < .00001)
+		texColor = vec3(.9,.35,.4);
+	if (length(texColor)<.4)
+		texColor *= vec3(3.8,1.,1.);
+		vec3 final_col = texColor;
+	if (Param3 == 1.)
+		final_col = texColor;
+	    else if (Param3 == 2.)
+		final_col = texColor.grb;
+	    else if (Param3 == 3.)
+		final_col = texColor.rbg;
+	    else if (Param3 == 4.) {
+		final_col = texColor.rrg;
+		}
+	else if (Param3 == 5.) {
+		final_col = texColor.bgr;
+		}
+	    else if (Param3 == 6.) {
+		final_col = texColor.bbg;
+	    }
+	    else if (Param3 == 7.)
+	       final_col = vec3((texColor.x + texColor.y + texColor.z)/3.);
+	gl_FragColor = vec4(final_col,1.0);
+}
+</script>
+	<script id="shader-4-fs" type="f">
+		precision highp float;
+uniform vec2 resolution;
+uniform vec2 mouse;
+uniform int index;
+uniform float time;
+uniform float Param1;
+uniform float Param2;
+uniform float Param3;
+uniform float Param4;
+
+float function 	= 0.;// 0-3
+float distance_type = 1.;// 0-3
+vec2 hash( vec2 p ){p = vec2( dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return fract(sin(p)*43758.5453);}
+vec3 hueShift(vec3 color, float hue)
+{
+const vec3 k = vec3(0.57735, 0.57735, 0.57735);
+float cosAngle = cos(hue);
+return vec3(color * cosAngle + cross(k, color) * sin(hue) + k * dot(k, color) * (1.0 - cosAngle));
+}
+float voronoi( in vec2 x ){
+	vec2 n = floor( x );
+	vec2 f = fract( x );
+	
+	float F1 = 8.0;
+	float F2 = 8.0;
+	
+	for( int j=-1; j<=1; j++ )
+		for( int i=-1; i<=1; i++ ){
+			vec2 g = vec2(i,j);
+			vec2 o = hash( n + g );
+
+			o = 0.5 + 0.41*sin( 2.*time/Param1 + 6.2831*o );	
+			vec2 r = g - f + o;
+
+			float d = distance_type < 1.0 ? dot(r,r)  :				// euclidean^2
+				  	distance_type < 2.0 ? sqrt(dot(r,r)) :			// euclidean
+					distance_type < 3.0 ? abs(r.x) + abs(r.y) :		// manhattan
+					distance_type < 4.0 ? max(abs(r.x), abs(r.y)) :	// chebyshev
+					0.0;
+			if( d<F1 ) { 
+				F2 = F1; 
+				F1 = d; 
+			} else if( d<F2 ) {
+				F2 = d;
+			}
+	    }
+	
+	float c = function < 1.0 ? F1 : 
+			  function < 2.0 ? F2 : 
+			  function < 3.0 ? F2-F1 :
+			  function < 4.0 ? (F1+F2)/2.0 : 
+			  0.0;	
+    return c;
+}
+
+void main( void ) 
+{
+vec2 p = gl_FragCoord.xy/resolution;
+	   if (Param2 == 3. || Param2 == 4.) {
+   	if (p.x > .5) {
+            p.x = 1.-p.x;
+        }
+    }
+	
+    if (Param2 == 2. || Param2 == 4.) {
+            if (p.y > .5) {
+                p.y = 1.-p.y;
+            }
+    }
+float c = voronoi((11.-(2.*Param4))*p );
+float c1 = voronoi((11.-(2.*Param4))*p*1.3 );
+vec3 texColor = vec3( c,c1,c);
+		vec3 final_col = texColor;
+	if (Param3 == 1.)
+		final_col = texColor;
+	    else if (Param3 == 2.)
+		final_col = texColor.grb;
+	    else if (Param3 == 3.)
+		final_col = texColor.ggb;
+	    else if (Param3 == 4.) {
+		final_col = hueShift(texColor.ggb,30.);
+		}
+	else if (Param3 == 5.) {
+		final_col = hueShift(texColor,-.5);
+		}
+	    else if (Param3 == 6.) {
+		final_col = hueShift(texColor.ggb,1.5);
+	    }
+	    else if (Param3 == 7.)
+	       final_col = texColor.rbb;
+	gl_FragColor = vec4(final_col,1.0);
+}
+</script>
+
+	<script id="shader-vs" type="v">
+		attribute vec3 aVertexPosition;attribute vec2 aTextureCoord;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;void main(void){gl_Position=uPMatrix*uMVMatrix*vec4(aVertexPosition,1.);}
+</script>
+
+</head>
+
+<body>
+	<div id="container">
+		<div id="main">
+			<canvas id="webgl-canvas" style="border: none;" width="1500" height="1000"></canvas>
+			<splash class="btn" enabled></splash>
+			<button class="btn" enabled></button>
+			<button1 class="btn" enabled></button1>
+			<button2 class="btn" enabled></button2>
+			<button3 class="btn" enabled></button3>
+			<buttonl class="btn" enabled></buttonl>
+			<buttonr class="btn" enabled></buttonr>
+			<audio id="audio" autobuffer="autobuffer" preload="auto">
+				<source src="plazma.mp3" type="audio/mp3" />
+				<source src="plazma.ogg" type="audio/ogg" />
+				<source src="plazma.aac" type="audio/aac" />
+				<audio id="audio1" autobuffer="autobuffer" preload="auto">
+					<source src="plazma1.mp3" type="audio/mp3" />
+					<source src="plazma1.ogg" type="audio/ogg" />
+					<source src="plazma1.aac" type="audio/aac" />
+					<audio id="audio2" autobuffer="autobuffer" preload="auto">
+						<source src="plazma2.mp3" type="audio/mp3" />
+						<source src="plazma2.ogg" type="audio/ogg" />
+						<source src="plazma2.aac" type="audio/aac" />
+					</audio>
+		</div>
+	</div>
+</body>
+
+</html>
